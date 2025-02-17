@@ -41,3 +41,10 @@ apps/docs/public/registry/
 # env
 .env
 .env.example
+
+# cursor
+.cursor
+.cursor/
+
+#llm_context
+llm_context/
