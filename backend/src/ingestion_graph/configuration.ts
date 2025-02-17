@@ -2,7 +2,7 @@ import { Annotation } from '@langchain/langgraph';
 import { RunnableConfig } from '@langchain/core/runnables';
 
 // This file contains sample documents to index, based on the following LangChain and LangGraph documentation pages:
-const DEFAULT_DOCS_FILE = './test_docs/docSplits.json';
+const DEFAULT_DOCS_FILE = './src/sample_docs.json';
 
 /**
  * The configuration for the indexing process.

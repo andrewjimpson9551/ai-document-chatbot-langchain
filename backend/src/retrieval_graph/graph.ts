@@ -1,9 +1,4 @@
-import {
-  StateGraph,
-  START,
-  END,
-  MessagesAnnotation,
-} from '@langchain/langgraph';
+import { StateGraph, START, END } from '@langchain/langgraph';
 import { AgentStateAnnotation } from './state.js';
 import { makeSupabaseRetriever } from '../shared/retrieval.js';
 import { ChatOpenAI } from '@langchain/openai';
@@ -86,7 +81,7 @@ async function generateResponse(
 ): Promise<typeof AgentStateAnnotation.Update> {
   const context = formatDocs(state.documents);
   const model = new ChatOpenAI({
-    model: 'gpt-4o',
+    model: 'gpt-4',
     temperature: 0,
   });
   const promptTemplate = await pull<ChatPromptTemplate>('rlm/rag-prompt');
@@ -102,6 +97,8 @@ async function generateResponse(
   ];
 
   const response = await model.invoke(messages);
+
+  console.log('response', response);
 
   return { messages: response };
 }

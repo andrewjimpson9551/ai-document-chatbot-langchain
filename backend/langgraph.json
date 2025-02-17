@@ -4,5 +4,6 @@
       "ingestion_graph": "./src/ingestion_graph/graph.ts:graph",
       "retrieval_graph": "./src/retrieval_graph/graph.ts:graph"
     },
-    "env": ".env"
+    "env": ".env",
+    "dependencies":["."]
   }

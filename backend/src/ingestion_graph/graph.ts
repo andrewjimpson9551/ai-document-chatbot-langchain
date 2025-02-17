@@ -29,8 +29,7 @@ async function ingestDocs(
   }
 
   const retriever = await makeSupabaseRetriever();
-  const documentIds = docs.map((doc) => doc.id);
-  await retriever.addDocuments(docs, { ids: documentIds });
+  await retriever.addDocuments(docs);
 
   return { docs: 'delete' };
 }

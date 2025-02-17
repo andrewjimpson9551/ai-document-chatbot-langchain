@@ -28,7 +28,7 @@ export function reduceDocs(
     const docId = uuidv4();
     return [
       ...existingList,
-      { pageContent: newDocs, metadata: { uuid: docId }, id: docId },
+      { pageContent: newDocs, metadata: { uuid: docId } },
     ];
   }
 
@@ -37,11 +37,7 @@ export function reduceDocs(
     for (const item of newDocs) {
       if (typeof item === 'string') {
         const itemId = uuidv4();
-        newList.push({
-          pageContent: item,
-          metadata: { uuid: itemId },
-          id: itemId,
-        });
+        newList.push({ pageContent: item, metadata: { uuid: itemId } });
         existingIds.add(itemId);
       } else if (typeof item === 'object') {
         const metadata = (item as Document).metadata ?? {};
@@ -52,15 +48,12 @@ export function reduceDocs(
             // It's a Document-like object
             newList.push({
               ...(item as Document),
-              id: itemId,
               metadata: { ...metadata, uuid: itemId },
             });
           } else {
             // It's a generic object, treat it as metadata
             newList.push({
               pageContent: '',
-              ...item,
-              id: itemId,
               metadata: { ...(item as { [key: string]: any }), uuid: itemId },
             });
           }
