@@ -5,7 +5,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { formatDocs } from './utils.js';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { pull } from 'langchain/hub';
-import { BaseMessage, HumanMessage } from '@langchain/core/messages';
+import { AIMessage, BaseMessage, HumanMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 
 async function checkQueryType(
@@ -37,17 +37,22 @@ async function checkQueryType(
     query: state.query,
   });
 
-  const response = await model.invoke(formattedPrompt);
+  const messageHistory = [...state.messages, formattedPrompt.toString()];
+
+  const response = await model.invoke(messageHistory);
+
   const route = response.route;
+
+  const userHumanMessage = new HumanMessage(state.query);
 
   if (route === 'retrieve') {
     return { route: 'retrieveDocuments' };
   } else {
-    const directAnswer = response.directAnswer ?? '';
+    const directAnswer = new AIMessage(response.directAnswer ?? '');
 
     return {
       route: END,
-      messages: [new HumanMessage(directAnswer)],
+      messages: [userHumanMessage, directAnswer],
     };
   }
 }
@@ -91,16 +96,18 @@ async function generateResponse(
     question: state.query,
   });
 
-  const messages = [
-    new HumanMessage(formattedPrompt.toString()),
-    ...state.messages,
-  ];
+  const userHumanMessage = new HumanMessage(state.query);
 
-  const response = await model.invoke(messages);
+  // Create a human message with the formatted prompt that includes context
+  const formattedPromptMessage = new HumanMessage(formattedPrompt.toString());
 
-  console.log('response', response);
+  const messageHistory = [...state.messages, formattedPromptMessage];
 
-  return { messages: response };
+  // Let MessagesAnnotation handle the message history
+  const response = await model.invoke(messageHistory);
+
+  // Return both the current query and the AI response to be handled by MessagesAnnotation's reducer
+  return { messages: [userHumanMessage, response] };
 }
 
 const builder = new StateGraph(AgentStateAnnotation)

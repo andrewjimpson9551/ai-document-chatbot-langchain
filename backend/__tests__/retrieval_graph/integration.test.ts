@@ -226,4 +226,53 @@ describe('Retrieval Graph Integration', () => {
       expect(content).toBeTruthy();
     }, 30000);
   });
+
+  describe('Message History', () => {
+    it('should preserve human messages in the conversation history', async () => {
+      if (!shouldRunTests()) return;
+
+      // First query
+      const result1 = await graph.invoke({
+        messages: [],
+        query: 'What is the budget for Project XYZ-123?',
+      });
+
+      // Second query should include history from first query
+      const result2 = await graph.invoke({
+        messages: result1.messages,
+        query: 'Who is the project lead?',
+      });
+
+      // Verify message history structure
+      expect(result2.messages.length).toBeGreaterThan(1);
+
+      // Find human messages in the history
+      const humanMessages = result2.messages.filter(
+        (msg) => msg instanceof HumanMessage,
+      );
+      const aiMessages = result2.messages.filter(
+        (msg) => !(msg instanceof HumanMessage),
+      );
+
+      // Verify we have both human and AI messages
+      expect(humanMessages.length).toBeGreaterThan(0);
+      expect(aiMessages.length).toBeGreaterThan(0);
+
+      // Verify the order - each human message should be followed by an AI message
+      result2.messages.forEach((msg, index) => {
+        if (
+          msg instanceof HumanMessage &&
+          index < result2.messages.length - 1
+        ) {
+          expect(result2.messages[index + 1] instanceof HumanMessage).toBe(
+            false,
+          );
+        }
+      });
+
+      // Verify content of messages
+      expect(String(humanMessages[0].content)).toContain('budget');
+      expect(String(humanMessages[1].content)).toContain('project lead');
+    }, 30000);
+  });
 });
