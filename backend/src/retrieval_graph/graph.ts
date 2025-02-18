@@ -11,8 +11,7 @@ import { z } from 'zod';
 async function checkQueryType(
   state: typeof AgentStateAnnotation.State,
 ): Promise<{
-  route: 'retrieveDocuments' | typeof END;
-  messages?: BaseMessage[];
+  route: 'retrieveDocuments' | 'directAnswer';
 }> {
   //schema for routing
   const schema = z.object({
@@ -21,7 +20,7 @@ async function checkQueryType(
   });
 
   const model = new ChatOpenAI({
-    model: 'gpt-4',
+    model: 'gpt-4o',
     temperature: 0,
   }).withStructuredOutput(schema);
 
@@ -43,23 +42,31 @@ async function checkQueryType(
 
   const route = response.route;
 
-  const userHumanMessage = new HumanMessage(state.query);
-
   if (route === 'retrieve') {
     return { route: 'retrieveDocuments' };
   } else {
-    const directAnswer = new AIMessage(response.directAnswer ?? '');
-
     return {
-      route: END,
-      messages: [userHumanMessage, directAnswer],
+      route: 'directAnswer',
     };
   }
 }
 
+async function answerQueryDirectly(
+  state: typeof AgentStateAnnotation.State,
+): Promise<typeof AgentStateAnnotation.Update> {
+  const model = new ChatOpenAI({
+    model: 'gpt-4o',
+    temperature: 0,
+  });
+  const userHumanMessage = new HumanMessage(state.query);
+
+  const response = await model.invoke([userHumanMessage]);
+  return { messages: [userHumanMessage, response] };
+}
+
 async function routeQuery(
   state: typeof AgentStateAnnotation.State,
-): Promise<'retrieveDocuments' | typeof END> {
+): Promise<'retrieveDocuments' | 'directAnswer'> {
   const route = state.route;
   if (!route) {
     throw new Error('Route is not set');
@@ -68,7 +75,7 @@ async function routeQuery(
   if (route === 'retrieveDocuments') {
     return 'retrieveDocuments';
   } else {
-    return END;
+    return 'directAnswer';
   }
 }
 
@@ -114,10 +121,15 @@ const builder = new StateGraph(AgentStateAnnotation)
   .addNode('retrieveDocuments', retrieveDocuments)
   .addNode('generateResponse', generateResponse)
   .addNode('checkQueryType', checkQueryType)
+  .addNode('directAnswer', answerQueryDirectly)
   .addEdge(START, 'checkQueryType')
-  .addConditionalEdges('checkQueryType', routeQuery, ['retrieveDocuments', END])
+  .addConditionalEdges('checkQueryType', routeQuery, [
+    'retrieveDocuments',
+    'directAnswer',
+  ])
   .addEdge('retrieveDocuments', 'generateResponse')
-  .addEdge('generateResponse', END);
+  .addEdge('generateResponse', END)
+  .addEdge('directAnswer', END);
 
 export const graph = builder.compile().withConfig({
   runName: 'RetrievalGraph',

@@ -45,7 +45,12 @@ export default function Home() {
     if (!input.trim() || !threadId || isLoading) return
 
     const userMessage = input.trim()
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }])
+    setMessages((prev) => [
+      ...prev, 
+      { role: "user", content: userMessage },
+      { role: "assistant", content: "" } // Add empty assistant message immediately
+    ])
+    console.log('Messages after submit:', messages)
     setInput("")
     setIsLoading(true)
 
@@ -68,46 +73,48 @@ export default function Home() {
       const reader = response.body?.getReader()
       if (!reader) throw new Error("No reader available")
 
-      let assistantMessage = ""
-      let newMessage = { role: "assistant" as const, content: "" } // Initialize new message object with proper typing
-
       while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        // Convert the chunk to text
-        const chunk = new TextDecoder().decode(value)
-        const lines = chunk.split("\n")
-
-        // Process each line
+        const { done, value } = await reader.read();
+        if (done) break;
+      
+        const chunkStr = new TextDecoder().decode(value);
+        const lines = chunkStr.split("\n").filter(Boolean);
+      
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(5))
-              if (data.event === "values" && data.data) {
-                if (data.data.messages && data.data.messages.length > 0) {
-                  const messages = data.data.messages
-                  const lastMessage = messages[messages.length - 1]
-                  if (lastMessage.type === "ai") {
-                    assistantMessage = lastMessage.content
-                    newMessage.content = assistantMessage // Update the content
-                  }
-                }
-                // Update the message in real-time
-                setMessages((prev) => {
-                  const newMessages = [...prev]
-                  const lastMessage = newMessages[newMessages.length - 1]
-                  if (lastMessage?.role === "assistant") {
-                    newMessages[newMessages.length - 1] = newMessage // Update existing message
-                  } else {
-                    newMessages.push(newMessage) // Push new message
-                  }
-                  return newMessages
-                })
+          if (!line.startsWith("data: ")) continue;
+      
+          const sseString = line.slice("data: ".length);
+          let sseEvent: any;
+          try {
+            sseEvent = JSON.parse(sseString);
+          } catch (err) {
+            console.error("Error parsing SSE line:", err, line);
+            continue;
+          }
+      
+          const { event, data } = sseEvent;
+      
+          if (event === "messages/partial" || event === "messages/complete") {
+            if (Array.isArray(data)) {
+              const lastObj = data[data.length - 1];
+              if (lastObj?.type === "ai") {
+                const partialContent = lastObj.content ?? "";
+                setMessages(prev => {
+                  const newArr = [...prev];
+                  // Now we know the last message is always the current assistant response
+                  newArr[newArr.length - 1].content = partialContent;
+                  return newArr;
+                });
               }
-            } catch (e) {
-              console.error("Error parsing SSE data:", e)
             }
+          }
+          else if (event === "messages/metadata") {
+            // Possibly do nothing, or log for debugging:
+            console.log("Metadata event:", data);
+          }
+          else {
+            // fallback for any other event
+            console.log("Unknown SSE event:", event, data);
           }
         }
       }
