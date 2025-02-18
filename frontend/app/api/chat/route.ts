@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         assistantId,
         {
           input: { query: message },
-          streamMode: 'values',
+          streamMode: 'messages',
         },
       );
 
@@ -57,11 +57,10 @@ export async function POST(req: Request) {
             // Forward each chunk from the graph to the client
             for await (const chunk of stream) {
               // Only send relevant chunks
-              if (chunk.event === 'values') {
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
-                );
-              }
+              console.log('Chunk:', chunk);
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
+              );
             }
           } catch (error) {
             console.error('Streaming error:', error);

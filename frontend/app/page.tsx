@@ -24,9 +24,13 @@ export default function Home() {
   useEffect(() => {
     // Create a thread when the component mounts
     const initThread = async () => {
+      // Skip if we already have a thread
+      if (threadId) return;
+      
       try {
-        console.log('Creating thread')
+        // Check if we can get the thread status before creating a new one
         const thread = await client.createThread()
+        console.log('Thread created', thread)
         setThreadId(thread.thread_id)
       } catch (error) {
         console.error("Error creating thread:", error)
@@ -34,7 +38,7 @@ export default function Home() {
       }
     }
     initThread()
-  }, [])
+  }, []) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
