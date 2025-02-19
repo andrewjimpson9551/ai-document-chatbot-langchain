@@ -122,16 +122,24 @@ export default function Home() {
               const lastObj = data[data.length - 1];
               if (lastObj?.type === 'ai') {
                 const partialContent = lastObj.content ?? '';
-                setMessages((prev) => {
-                  const newArr = [...prev];
-                  if (
-                    newArr.length > 0 &&
-                    newArr[newArr.length - 1].role === 'assistant'
-                  ) {
-                    newArr[newArr.length - 1].content = partialContent;
-                  }
-                  return newArr;
-                });
+
+                // Only display if content is a string message
+                if (
+                  typeof partialContent === 'string' &&
+                  !partialContent.startsWith('{')
+                ) {
+                  setMessages((prev) => {
+                    const newArr = [...prev];
+                    if (
+                      newArr.length > 0 &&
+                      newArr[newArr.length - 1].role === 'assistant'
+                    ) {
+                      console.log('Updating message:', partialContent);
+                      newArr[newArr.length - 1].content = partialContent;
+                    }
+                    return newArr;
+                  });
+                }
               }
             }
           } else if (event === 'messages/metadata') {

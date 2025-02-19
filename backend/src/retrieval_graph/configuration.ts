@@ -13,9 +13,10 @@ export const AgentConfigurationAnnotation = Annotation.Root({
 
   // models
   /**
-   * The OpenAI language model used in the retrieval graph.
+   * The language model used for processing and refining queries.
+   * Should be in the form: provider/model-name.
    */
-  modelName: Annotation<string>,
+  queryModel: Annotation<string>,
 });
 
 /**
@@ -33,6 +34,6 @@ export function ensureAgentConfiguration(
   const baseConfig = ensureBaseConfiguration(config);
   return {
     ...baseConfig,
-    modelName: configurable.modelName || 'gpt-4o',
+    queryModel: configurable.queryModel || 'openai/gpt-4o',
   };
 }

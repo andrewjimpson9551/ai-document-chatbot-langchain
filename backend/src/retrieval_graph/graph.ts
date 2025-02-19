@@ -1,18 +1,22 @@
 import { StateGraph, START, END } from '@langchain/langgraph';
 import { AgentStateAnnotation } from './state.js';
-import { makeRetriever, makeSupabaseRetriever } from '../shared/retrieval.js';
-import { ChatOpenAI } from '@langchain/openai';
+import { makeRetriever } from '../shared/retrieval.js';
 import { formatDocs } from './utils.js';
 import { HumanMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import { RESPONSE_SYSTEM_PROMPT, ROUTER_SYSTEM_PROMPT } from './prompts.js';
 import { RunnableConfig } from '@langchain/core/runnables';
-import { AgentConfigurationAnnotation } from './configuration.js';
+import {
+  AgentConfigurationAnnotation,
+  ensureAgentConfiguration,
+} from './configuration.js';
+import { loadChatModel } from '../shared/utils.js';
 
 async function checkQueryType(
   state: typeof AgentStateAnnotation.State,
+  config: RunnableConfig,
 ): Promise<{
-  route: 'retrieveDocuments' | 'directAnswer';
+  route: 'retrieve' | 'direct';
 }> {
   //schema for routing
   const schema = z.object({
@@ -20,10 +24,8 @@ async function checkQueryType(
     directAnswer: z.string().optional(),
   });
 
-  const model = new ChatOpenAI({
-    model: 'gpt-4o',
-    temperature: 0,
-  }).withStructuredOutput(schema);
+  const configuration = ensureAgentConfiguration(config);
+  const model = await loadChatModel(configuration.queryModel);
 
   const routingPrompt = ROUTER_SYSTEM_PROMPT;
 
@@ -31,29 +33,21 @@ async function checkQueryType(
     query: state.query,
   });
 
-  const messageHistory = [...state.messages, formattedPrompt.toString()];
-
-  const response = await model.invoke(messageHistory);
+  const response = await model
+    .withStructuredOutput(schema)
+    .invoke(formattedPrompt.toString());
 
   const route = response.route;
 
-  if (route === 'retrieve') {
-    return { route: 'retrieveDocuments' };
-  } else {
-    return {
-      route: 'directAnswer',
-    };
-  }
+  return { route };
 }
 
 async function answerQueryDirectly(
   state: typeof AgentStateAnnotation.State,
+  config: RunnableConfig,
 ): Promise<typeof AgentStateAnnotation.Update> {
-  const model = new ChatOpenAI({
-    model: 'gpt-4o',
-    temperature: 0,
-  });
-  console.log('answerQueryDirectly state', state);
+  const configuration = ensureAgentConfiguration(config);
+  const model = await loadChatModel(configuration.queryModel);
   const userHumanMessage = new HumanMessage(state.query);
 
   const response = await model.invoke([userHumanMessage]);
@@ -68,10 +62,12 @@ async function routeQuery(
     throw new Error('Route is not set');
   }
 
-  if (route === 'retrieveDocuments') {
+  if (route === 'retrieve') {
     return 'retrieveDocuments';
-  } else {
+  } else if (route === 'direct') {
     return 'directAnswer';
+  } else {
+    throw new Error('Invalid route');
   }
 }
 
@@ -79,7 +75,6 @@ async function retrieveDocuments(
   state: typeof AgentStateAnnotation.State,
   config: RunnableConfig,
 ): Promise<typeof AgentStateAnnotation.Update> {
-  console.log('retrieveDocuments state', state);
   const retriever = await makeRetriever(config);
   const response = await retriever.invoke(state.query);
 
@@ -88,12 +83,11 @@ async function retrieveDocuments(
 
 async function generateResponse(
   state: typeof AgentStateAnnotation.State,
+  config: RunnableConfig,
 ): Promise<typeof AgentStateAnnotation.Update> {
+  const configuration = ensureAgentConfiguration(config);
   const context = formatDocs(state.documents);
-  const model = new ChatOpenAI({
-    model: 'gpt-4o',
-    temperature: 0,
-  });
+  const model = await loadChatModel(configuration.queryModel);
   const promptTemplate = RESPONSE_SYSTEM_PROMPT;
 
   const formattedPrompt = await promptTemplate.invoke({
