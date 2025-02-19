@@ -153,7 +153,9 @@ export default function Home() {
       console.error('Error sending message:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send message. Please try again.',
+        description:
+          'Failed to send message. Please try again.\n' +
+          (error instanceof Error ? error.message : 'Unknown error'),
         variant: 'destructive',
       });
       setMessages((prev) => {
@@ -186,7 +188,21 @@ export default function Home() {
 
     setIsUploading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      const formData = new FormData();
+      selectedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      const response = await fetch('/api/ingest', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to upload files');
+      }
+
       setFiles((prev) => [...prev, ...selectedFiles]);
       toast({
         title: 'Success',
@@ -197,7 +213,9 @@ export default function Home() {
       console.error('Error uploading files:', error);
       toast({
         title: 'Upload failed',
-        description: 'Failed to upload files. Please try again.',
+        description:
+          'Failed to upload files. Please try again.\n' +
+          (error instanceof Error ? error.message : 'Unknown error'),
         variant: 'destructive',
       });
     } finally {

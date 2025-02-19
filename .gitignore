@@ -48,3 +48,7 @@ apps/docs/public/registry/
 
 #llm_context
 llm_context/
+
+test_docs
+
+.swc
