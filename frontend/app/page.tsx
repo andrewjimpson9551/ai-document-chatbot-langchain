@@ -21,7 +21,8 @@ export default function Home() {
   const [threadId, setThreadId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null); // Track the AbortController
-  
+  const messagesEndRef = useRef<HTMLDivElement>(null) // Add this ref
+
   useEffect(() => {
     // Create a thread when the component mounts
     const initThread = async () => {
@@ -40,6 +41,11 @@ export default function Home() {
     }
     initThread()
   }, []) 
+
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -198,6 +204,7 @@ export default function Home() {
           {messages.map((message, i) => (
             <ChatMessage key={i} message={message} />
           ))}
+          <div ref={messagesEndRef} />
         </div>
       )}
 
