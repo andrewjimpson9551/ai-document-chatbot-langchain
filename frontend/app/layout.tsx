@@ -1,12 +1,13 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { GeistSans } from "geist/font"
+import { GeistSans } from "geist/font/sans"
+import { Toaster } from "@/components/ui/toaster"
+
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "AI Chatbot",
-  description: "Next.js AI Chatbot",
-    generator: 'v0.dev'
+  title: "Learning LangChain Book Chatbot Demo",
+  description: "A chatbot demo based on Learning LangChain (O'Reilly)",
 }
 
 export default function RootLayout({
@@ -16,7 +17,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={GeistSans.className}>{children}</body>
+      <body className={GeistSans.className}>
+        {children}
+        <Toaster />
+      </body>
     </html>
   )
 }

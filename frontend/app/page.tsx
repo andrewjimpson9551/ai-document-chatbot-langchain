@@ -1,190 +1,213 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useRef, useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Paperclip, ArrowUp, Loader2 } from "lucide-react"
-import { ExamplePrompts } from "@/components/example-prompts"
-import { ChatMessage } from "@/components/chat-message"
-import { FilePreview } from "@/components/file-preview"
-import type { Thread, DefaultValues } from "@langchain/langgraph-sdk"
-import { client } from "@/lib/langgraph-client"
+import { useToast } from '@/hooks/use-toast';
+import { useRef, useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Paperclip, ArrowUp, Loader2 } from 'lucide-react';
+import { ExamplePrompts } from '@/components/example-prompts';
+import { ChatMessage } from '@/components/chat-message';
+import { FilePreview } from '@/components/file-preview';
+import { client } from '@/lib/langgraph-client';
 
 export default function Home() {
-  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
-  const [input, setInput] = useState("")
-  const [files, setFiles] = useState<File[]>([])
-  const [isUploading, setIsUploading] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [threadId, setThreadId] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast(); // Add this hook
+  const [messages, setMessages] = useState<
+    Array<{ role: 'user' | 'assistant'; content: string }>
+  >([]);
+  const [input, setInput] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null); // Track the AbortController
-  const messagesEndRef = useRef<HTMLDivElement>(null) // Add this ref
+  const messagesEndRef = useRef<HTMLDivElement>(null); // Add this ref
 
   useEffect(() => {
     // Create a thread when the component mounts
     const initThread = async () => {
       // Skip if we already have a thread
       if (threadId) return;
-      
-      try {
-        // Check if we can get the thread status before creating a new one
-        const thread = await client.createThread()
-        console.log('Thread created', thread)
-        setThreadId(thread.thread_id)
-      } catch (error) {
-        console.error("Error creating thread:", error)
-        alert("Error creating thread. Please make sure you have set the LANGGRAPH_API_URL environment variable correctly. " + error)
-      }
-    }
-    initThread()
-  }, []) 
 
+      try {
+        const thread = await client.createThread();
+
+        setThreadId(thread.thread_id);
+      } catch (error) {
+        console.error('Error creating thread:', error);
+        toast({
+          title: 'Error',
+          description:
+            'Error creating thread. Please make sure you have set the LANGGRAPH_API_URL environment variable correctly. ' +
+            error,
+          variant: 'destructive',
+        });
+      }
+    };
+    initThread();
+  }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || !threadId || isLoading) return
+    e.preventDefault();
+    if (!input.trim() || !threadId || isLoading) return;
 
-    // Abort any existing streaming
     if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+      abortControllerRef.current.abort();
     }
 
-    const userMessage = input.trim()
-    console.log("Before setMessages (new question):", messages)
+    const userMessage = input.trim();
     setMessages((prev) => [
-      ...prev, 
-      { role: "user", content: userMessage },
-      { role: "assistant", content: "" } 
-    ])
-    console.log('After setMessages (new question):', messages)
-    setInput("")
-    setIsLoading(true)
+      ...prev,
+      { role: 'user', content: userMessage },
+      { role: 'assistant', content: '' },
+    ]);
+    setInput('');
+    setIsLoading(true);
 
-    const abortController = new AbortController(); // Create a new AbortController
-    abortControllerRef.current = abortController; // Store the AbortController
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
+      const response = await fetch('/api/chat', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: userMessage,
           threadId,
         }),
         signal: abortController.signal,
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const reader = response.body?.getReader()
-      if (!reader) throw new Error("No reader available")
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader available');
 
-        const decoder = new TextDecoder();
-
+      const decoder = new TextDecoder();
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-      
+
         const chunkStr = decoder.decode(value);
-        const lines = chunkStr.split("\n").filter(Boolean);
-      
+        const lines = chunkStr.split('\n').filter(Boolean);
+
         for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-      
-          const sseString = line.slice("data: ".length);
+          if (!line.startsWith('data: ')) continue;
+
+          const sseString = line.slice('data: '.length);
           let sseEvent: any;
           try {
             sseEvent = JSON.parse(sseString);
           } catch (err) {
-            console.error("Error parsing SSE line:", err, line);
+            console.error('Error parsing SSE line:', err, line);
             continue;
           }
-      
+
           const { event, data } = sseEvent;
-      
-          if (event === "messages/partial") {
+
+          if (event === 'messages/partial') {
             if (Array.isArray(data)) {
               const lastObj = data[data.length - 1];
-              if (lastObj?.type === "ai") {
-                const partialContent = lastObj.content ?? "";
-                console.log("pre-state", messages)
-                setMessages(prev => {
+              if (lastObj?.type === 'ai') {
+                const partialContent = lastObj.content ?? '';
+                setMessages((prev) => {
                   const newArr = [...prev];
-                  if (newArr.length > 0 && newArr[newArr.length - 1].role === "assistant") {
+                  if (
+                    newArr.length > 0 &&
+                    newArr[newArr.length - 1].role === 'assistant'
+                  ) {
                     newArr[newArr.length - 1].content = partialContent;
                   }
                   return newArr;
                 });
-                console.log("post-state", messages)
               }
             }
-          }
-          else if (event === "messages/metadata") {
-            // Possibly do nothing, or log for debugging:
-            console.log("Metadata event:", data);
-          }
-          else {
-            // fallback for any other event
-            console.log("Unknown SSE event:", event, data);
+          } else if (event === 'messages/metadata') {
+            console.log('Metadata event:', data);
+          } else {
+            console.log('Unknown SSE event:', event, data);
           }
         }
       }
     } catch (error) {
-      console.error("Error sending message:", error)
-      setMessages(prev => {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send message. Please try again.',
+        variant: 'destructive',
+      });
+      setMessages((prev) => {
         const newArr = [...prev];
-        // Replace the last assistant message with the error message
-        newArr[newArr.length - 1].content = "Sorry, there was an error processing your message.";
+        newArr[newArr.length - 1].content =
+          'Sorry, there was an error processing your message.';
         return newArr;
       });
     } finally {
-      setIsLoading(false)
-      abortControllerRef.current = null; // Clear the AbortController
+      setIsLoading(false);
+      abortControllerRef.current = null;
     }
-  }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || [])
-    if (selectedFiles.length === 0) return
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
 
-    // Check if all files are PDFs
-    const nonPdfFiles = selectedFiles.filter(file => file.type !== "application/pdf")
+    const nonPdfFiles = selectedFiles.filter(
+      (file) => file.type !== 'application/pdf',
+    );
     if (nonPdfFiles.length > 0) {
-      alert("Please upload PDF files only")
-      return
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload PDF files only',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    setIsUploading(true)
+    setIsUploading(true);
     try {
-      // replace simulate upload delay with actual upload delay
-      await new Promise((resolve) => setTimeout(resolve, 5000))
-      setFiles(prev => [...prev, ...selectedFiles])
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      setFiles((prev) => [...prev, ...selectedFiles]);
+      toast({
+        title: 'Success',
+        description: `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} uploaded successfully`,
+        variant: 'default',
+      });
     } catch (error) {
-      console.error("Error uploading files:", error)
-      alert("Failed to upload files")
+      console.error('Error uploading files:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload files. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '' // Reset file input
+        fileInputRef.current.value = '';
       }
     }
-  }
+  };
 
   const handleRemoveFile = (fileToRemove: File) => {
-    setFiles(files.filter(file => file !== fileToRemove))
-  }
+    setFiles(files.filter((file) => file !== fileToRemove));
+    toast({
+      title: 'File removed',
+      description: `${fileToRemove.name} has been removed`,
+      variant: 'default',
+    });
+  };
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-24 max-w-5xl mx-auto w-full">
@@ -193,7 +216,14 @@ export default function Home() {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <p className="font-medium text-muted-foreground max-w-md mx-auto">
-                This ai chatbot is an example to accompany the book: <a href="https://tinyurl.com/learning-langchain" className="underline hover:text-foreground">Learning LangChain (O'Reilly): Building AI and LLM applications with LangChain and LangGraph</a>
+                This ai chatbot is an example to accompany the book:{' '}
+                <a
+                  href="https://tinyurl.com/learning-langchain"
+                  className="underline hover:text-foreground"
+                >
+                  Learning LangChain (O'Reilly): Building AI and LLM
+                  applications with LangChain and LangGraph
+                </a>
               </p>
             </div>
           </div>
@@ -210,7 +240,6 @@ export default function Home() {
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background">
         <div className="max-w-5xl mx-auto space-y-4">
-          {/* File Previews */}
           {files.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {files.map((file, index) => (
@@ -222,8 +251,7 @@ export default function Home() {
               ))}
             </div>
           )}
-          
-          {/* Chat Input Form */}
+
           <form onSubmit={handleSubmit} className="relative">
             <div className="flex gap-2 border rounded-md overflow-hidden bg-gray-50">
               <input
@@ -234,10 +262,10 @@ export default function Home() {
                 multiple
                 className="hidden"
               />
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 className="rounded-none h-12"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
@@ -253,11 +281,20 @@ export default function Home() {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isUploading ? "Uploading PDF..." : "Send a message..."}
+                placeholder={
+                  isUploading ? 'Uploading PDF...' : 'Send a message...'
+                }
                 className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-12 bg-transparent"
                 disabled={isUploading || isLoading || !threadId}
               />
-              <Button type="submit" size="icon" className="rounded-none h-12" disabled={!input.trim() || isUploading || isLoading || !threadId}>
+              <Button
+                type="submit"
+                size="icon"
+                className="rounded-none h-12"
+                disabled={
+                  !input.trim() || isUploading || isLoading || !threadId
+                }
+              >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -269,6 +306,5 @@ export default function Home() {
         </div>
       </div>
     </main>
-  )
+  );
 }
-

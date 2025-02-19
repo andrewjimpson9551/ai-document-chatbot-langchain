@@ -13,6 +13,10 @@ import {
 export function Toaster() {
   const { toasts } = useToast()
 
+  console.log("Toaster component rendered"); // Add this line
+  console.log("Toasts:", toasts); // Add this line
+
+
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
