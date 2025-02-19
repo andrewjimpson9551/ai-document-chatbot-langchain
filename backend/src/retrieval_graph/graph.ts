@@ -1,12 +1,13 @@
 import { StateGraph, START, END } from '@langchain/langgraph';
 import { AgentStateAnnotation } from './state.js';
-import { makeSupabaseRetriever } from '../shared/retrieval.js';
+import { makeRetriever } from '../shared/retrieval.js';
 import { ChatOpenAI } from '@langchain/openai';
 import { formatDocs } from './utils.js';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { HumanMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import { RESPONSE_SYSTEM_PROMPT, ROUTER_SYSTEM_PROMPT } from './prompts.js';
+import { RunnableConfig } from '@langchain/core/runnables';
+import { AgentConfigurationAnnotation } from './configuration.js';
 
 async function checkQueryType(
   state: typeof AgentStateAnnotation.State,
@@ -74,9 +75,10 @@ async function routeQuery(
 }
 
 async function retrieveDocuments(
+  config: RunnableConfig,
   state: typeof AgentStateAnnotation.State,
 ): Promise<typeof AgentStateAnnotation.Update> {
-  const retriever = await makeSupabaseRetriever();
+  const retriever = await makeRetriever(config);
   const response = await retriever.invoke(state.query);
 
   return { documents: response };
@@ -111,7 +113,10 @@ async function generateResponse(
   return { messages: [userHumanMessage, response] };
 }
 
-const builder = new StateGraph(AgentStateAnnotation)
+const builder = new StateGraph(
+  AgentStateAnnotation,
+  AgentConfigurationAnnotation,
+)
   .addNode('retrieveDocuments', retrieveDocuments)
   .addNode('generateResponse', generateResponse)
   .addNode('checkQueryType', checkQueryType)

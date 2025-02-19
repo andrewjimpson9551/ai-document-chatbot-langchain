@@ -7,7 +7,7 @@ import { StateGraph, END, START } from '@langchain/langgraph';
 import fs from 'fs/promises';
 
 import { IndexStateAnnotation } from './state.js';
-import { makeSupabaseRetriever } from '../shared/retrieval.js';
+import { makeRetriever } from '../shared/retrieval.js';
 import {
   ensureIndexConfiguration,
   IndexConfigurationAnnotation,
@@ -31,7 +31,7 @@ async function ingestDocs(
     docs = reduceDocs([], serializedDocs);
   }
 
-  const retriever = await makeSupabaseRetriever();
+  const retriever = await makeRetriever(config);
   await retriever.addDocuments(docs);
 
   return { docs: 'delete' };
