@@ -4,9 +4,9 @@ import { makeSupabaseRetriever } from '../shared/retrieval.js';
 import { ChatOpenAI } from '@langchain/openai';
 import { formatDocs } from './utils.js';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { pull } from 'langchain/hub';
-import { AIMessage, BaseMessage, HumanMessage } from '@langchain/core/messages';
+import { HumanMessage } from '@langchain/core/messages';
 import { z } from 'zod';
+import { RESPONSE_SYSTEM_PROMPT, ROUTER_SYSTEM_PROMPT } from './prompts.js';
 
 async function checkQueryType(
   state: typeof AgentStateAnnotation.State,
@@ -24,13 +24,7 @@ async function checkQueryType(
     temperature: 0,
   }).withStructuredOutput(schema);
 
-  const routingPrompt = ChatPromptTemplate.fromMessages([
-    [
-      'system',
-      "You are a routing assistant. Your job is to determine if a question needs document retrieval or can be answered directly.\n\nRespond with either:\n'retrieve' - if the question requires retrieving documents\n'direct' - if the question can be answered directly AND your direct answer",
-    ],
-    ['human', '{query}'],
-  ]);
+  const routingPrompt = ROUTER_SYSTEM_PROMPT;
 
   const formattedPrompt = await routingPrompt.invoke({
     query: state.query,
@@ -93,14 +87,14 @@ async function generateResponse(
 ): Promise<typeof AgentStateAnnotation.Update> {
   const context = formatDocs(state.documents);
   const model = new ChatOpenAI({
-    model: 'gpt-4',
+    model: 'gpt-4o',
     temperature: 0,
   });
-  const promptTemplate = await pull<ChatPromptTemplate>('rlm/rag-prompt');
+  const promptTemplate = RESPONSE_SYSTEM_PROMPT;
 
   const formattedPrompt = await promptTemplate.invoke({
-    context: context,
     question: state.query,
+    context: context,
   });
 
   const userHumanMessage = new HumanMessage(state.query);

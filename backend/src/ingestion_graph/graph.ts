@@ -8,7 +8,10 @@ import fs from 'fs/promises';
 
 import { IndexStateAnnotation } from './state.js';
 import { makeSupabaseRetriever } from '../shared/retrieval.js';
-import { ensureIndexConfiguration } from './configuration.js';
+import {
+  ensureIndexConfiguration,
+  IndexConfigurationAnnotation,
+} from './configuration.js';
 import { reduceDocs } from '../shared/state.js';
 
 async function ingestDocs(
@@ -35,7 +38,10 @@ async function ingestDocs(
 }
 
 // Define the graph
-const builder = new StateGraph(IndexStateAnnotation)
+const builder = new StateGraph(
+  IndexStateAnnotation,
+  IndexConfigurationAnnotation,
+)
   .addNode('ingestDocs', ingestDocs)
   .addEdge(START, 'ingestDocs')
   .addEdge('ingestDocs', END);
