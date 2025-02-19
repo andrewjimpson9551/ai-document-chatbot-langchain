@@ -38,7 +38,7 @@ async function runDemo() {
     console.log('\nStarting stream...');
     const stream = await client.runs.stream(thread.thread_id, assistant_id, {
       input: { query: question },
-      streamMode: ['values', 'events', 'updates'], // Include all stream types
+      streamMode: ['values', 'messages', 'updates'], // Include all stream types
     });
 
     // Process the stream chunks
@@ -47,11 +47,11 @@ async function runDemo() {
       console.log('\nReceived chunk:');
       console.log('Event type:', chunk.event);
       if (chunk.event === 'values') {
-        console.log('Values data:', JSON.stringify(chunk.data, null, 2));
-      } else if (chunk.event === 'events') {
-        console.log('Event data:', JSON.stringify(chunk.data, null, 2));
+        // console.log('Values data:', JSON.stringify(chunk.data, null, 2));
+      } else if (chunk.event === 'messages/partial') {
+        console.log('Messages data:', JSON.stringify(chunk, null, 2));
       } else if (chunk.event === 'updates') {
-        console.log('Update data:', JSON.stringify(chunk.data, null, 2));
+        // console.log('Update data:', JSON.stringify(chunk.data, null, 2));
       }
     }
     console.log('\nStream completed.');

@@ -1,6 +1,6 @@
 import { StateGraph, START, END } from '@langchain/langgraph';
 import { AgentStateAnnotation } from './state.js';
-import { makeRetriever } from '../shared/retrieval.js';
+import { makeRetriever, makeSupabaseRetriever } from '../shared/retrieval.js';
 import { ChatOpenAI } from '@langchain/openai';
 import { formatDocs } from './utils.js';
 import { HumanMessage } from '@langchain/core/messages';
@@ -53,6 +53,7 @@ async function answerQueryDirectly(
     model: 'gpt-4o',
     temperature: 0,
   });
+  console.log('answerQueryDirectly state', state);
   const userHumanMessage = new HumanMessage(state.query);
 
   const response = await model.invoke([userHumanMessage]);
@@ -75,9 +76,10 @@ async function routeQuery(
 }
 
 async function retrieveDocuments(
-  config: RunnableConfig,
   state: typeof AgentStateAnnotation.State,
+  config: RunnableConfig,
 ): Promise<typeof AgentStateAnnotation.Update> {
+  console.log('retrieveDocuments state', state);
   const retriever = await makeRetriever(config);
   const response = await retriever.invoke(state.query);
 

@@ -8,9 +8,6 @@ import {
   ensureBaseConfiguration,
 } from './configuration.js';
 
-const embeddings = new OpenAIEmbeddings({
-  model: 'text-embedding-3-small',
-});
 export async function makeSupabaseRetriever(
   configuration: typeof BaseConfigurationAnnotation.State,
 ): Promise<VectorStoreRetriever> {
@@ -19,6 +16,9 @@ export async function makeSupabaseRetriever(
       'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables are not defined',
     );
   }
+  const embeddings = new OpenAIEmbeddings({
+    model: 'text-embedding-3-small',
+  });
   const supabaseClient = createClient(
     process.env.SUPABASE_URL ?? '',
     process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',

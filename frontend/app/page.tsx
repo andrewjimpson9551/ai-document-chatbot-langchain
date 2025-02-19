@@ -20,7 +20,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [threadId, setThreadId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null); // Track the AbortController
 
+
+  
   useEffect(() => {
     // Create a thread when the component mounts
     const initThread = async () => {
@@ -44,15 +47,23 @@ export default function Home() {
     e.preventDefault()
     if (!input.trim() || !threadId || isLoading) return
 
+    // Abort any existing streaming
+    if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+    }
+
     const userMessage = input.trim()
     setMessages((prev) => [
       ...prev, 
       { role: "user", content: userMessage },
-      { role: "assistant", content: "" } // Add empty assistant message immediately
+      { role: "assistant", content: "" } 
     ])
     console.log('Messages after submit:', messages)
     setInput("")
     setIsLoading(true)
+
+    const abortController = new AbortController(); // Create a new AbortController
+    abortControllerRef.current = abortController; // Store the AbortController
 
     try {
       const response = await fetch("/api/chat", {
@@ -64,6 +75,7 @@ export default function Home() {
           message: userMessage,
           threadId,
         }),
+        signal: abortController.signal,
       })
 
       if (!response.ok) {
@@ -73,11 +85,14 @@ export default function Home() {
       const reader = response.body?.getReader()
       if (!reader) throw new Error("No reader available")
 
+        const decoder = new TextDecoder();
+
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
       
-        const chunkStr = new TextDecoder().decode(value);
+        const chunkStr = decoder.decode(value);
         const lines = chunkStr.split("\n").filter(Boolean);
       
         for (const line of lines) {
@@ -101,8 +116,10 @@ export default function Home() {
                 const partialContent = lastObj.content ?? "";
                 setMessages(prev => {
                   const newArr = [...prev];
-                  // Now we know the last message is always the current assistant response
-                  newArr[newArr.length - 1].content = partialContent;
+                  console.log('newArr', newArr);
+                  if (newArr.length > 0 && newArr[newArr.length - 1].role === "assistant") {
+                    newArr[newArr.length - 1].content = partialContent;
+                  }
                   return newArr;
                 });
               }
@@ -120,12 +137,15 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error sending message:", error)
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Sorry, there was an error processing your message." },
-      ])
+      setMessages(prev => {
+        const newArr = [...prev];
+        // Replace the last assistant message with the error message
+        newArr[newArr.length - 1].content = "Sorry, there was an error processing your message.";
+        return newArr;
+      });
     } finally {
       setIsLoading(false)
+      abortControllerRef.current = null; // Clear the AbortController
     }
   }
 
