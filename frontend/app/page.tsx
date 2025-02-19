@@ -21,8 +21,6 @@ export default function Home() {
   const [threadId, setThreadId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null); // Track the AbortController
-
-
   
   useEffect(() => {
     // Create a thread when the component mounts
@@ -53,12 +51,13 @@ export default function Home() {
     }
 
     const userMessage = input.trim()
+    console.log("Before setMessages (new question):", messages)
     setMessages((prev) => [
       ...prev, 
       { role: "user", content: userMessage },
       { role: "assistant", content: "" } 
     ])
-    console.log('Messages after submit:', messages)
+    console.log('After setMessages (new question):', messages)
     setInput("")
     setIsLoading(true)
 
@@ -109,19 +108,20 @@ export default function Home() {
       
           const { event, data } = sseEvent;
       
-          if (event === "messages/partial" || event === "messages/complete") {
+          if (event === "messages/partial") {
             if (Array.isArray(data)) {
               const lastObj = data[data.length - 1];
               if (lastObj?.type === "ai") {
                 const partialContent = lastObj.content ?? "";
+                console.log("pre-state", messages)
                 setMessages(prev => {
                   const newArr = [...prev];
-                  console.log('newArr', newArr);
                   if (newArr.length > 0 && newArr[newArr.length - 1].role === "assistant") {
                     newArr[newArr.length - 1].content = partialContent;
                   }
                   return newArr;
                 });
+                console.log("post-state", messages)
               }
             }
           }
