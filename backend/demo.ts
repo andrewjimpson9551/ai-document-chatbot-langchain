@@ -47,14 +47,29 @@ async function runDemo() {
       console.log('\nReceived chunk:');
       //   console.log('Event type:', chunk.event);
       if (chunk.event === 'values') {
-        console.log('Values data:', JSON.stringify(chunk.data, null, 2));
+        // console.log('Values data:', JSON.stringify(chunk.data, null, 2));
       } else if (chunk.event === 'messages/partial') {
         // console.log('Messages data:', JSON.stringify(chunk, null, 2));
       } else if (chunk.event === 'updates') {
-        // console.log('Update data:', JSON.stringify(chunk.data, null, 2));
+        console.log('Update data:', JSON.stringify(chunk.data, null, 2));
       }
     }
     console.log('\nStream completed.');
+
+    const messagesStream = await client.runs.stream(
+      thread.thread_id,
+      assistant_id,
+      {
+        input: { query: question },
+        streamMode: 'updates', // Include all stream types
+      },
+    );
+
+    for await (const chunk of messagesStream) {
+      console.log('\nReceived chunk:');
+      console.log('Event type:', chunk.event);
+      console.log('updates data:', JSON.stringify(chunk.data, null, 2));
+    }
   } catch (error) {
     console.error('Error in streaming run:', error);
     // Log more details about the error

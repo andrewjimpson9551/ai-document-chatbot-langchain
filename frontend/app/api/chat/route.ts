@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         assistantId,
         {
           input: { query: message },
-          streamMode: ['messages', 'values'],
+          streamMode: ['messages', 'updates'],
           config: {
             configurable: {
               ...retrievalAssistantStreamConfig,

@@ -3,6 +3,12 @@ import { Document } from '@langchain/core/documents';
 /**
  * Represents the state of the retrieval graph / agent.
  */
+export type documentType =
+  | PDFDocument[]
+  | { [key: string]: any }[]
+  | string[]
+  | string
+  | 'delete';
 export interface AgentState {
   query?: string;
   route?: string;
@@ -13,12 +19,13 @@ export interface AgentState {
     id: string;
     type: 'human' | 'assistant';
   }>;
-  documents:
-    | PDFDocument[]
-    | { [key: string]: any }[]
-    | string[]
-    | string
-    | 'delete';
+  documents: documentType;
+}
+
+export interface RetrieveDocumentsNodeUpdates {
+  retrieveDocuments: {
+    documents: documentType;
+  };
 }
 
 export type PDFDocument = Document & {

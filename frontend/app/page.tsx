@@ -11,12 +11,21 @@ import { ExamplePrompts } from '@/components/example-prompts';
 import { ChatMessage } from '@/components/chat-message';
 import { FilePreview } from '@/components/file-preview';
 import { client } from '@/lib/langgraph-client';
-import { AgentState } from '@/app/types/graphTypes';
-
+import {
+  AgentState,
+  documentType,
+  PDFDocument,
+  RetrieveDocumentsNodeUpdates,
+} from '@/types/graphTypes';
+import { Card, CardContent } from '@/components/ui/card';
 export default function Home() {
   const { toast } = useToast(); // Add this hook
   const [messages, setMessages] = useState<
-    Array<{ role: 'user' | 'assistant'; content: string }>
+    Array<{
+      role: 'user' | 'assistant';
+      content: string;
+      sources?: PDFDocument[];
+    }>
   >([]);
   const [input, setInput] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -26,6 +35,7 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null); // Track the AbortController
   const messagesEndRef = useRef<HTMLDivElement>(null); // Add this ref
+  const lastRetrievedDocsRef = useRef<PDFDocument[]>([]); // useRef to store the last retrieved documents
 
   useEffect(() => {
     // Create a thread when the component mounts
@@ -66,14 +76,16 @@ export default function Home() {
     const userMessage = input.trim();
     setMessages((prev) => [
       ...prev,
-      { role: 'user', content: userMessage },
-      { role: 'assistant', content: '' },
+      { role: 'user', content: userMessage, sources: undefined }, // Clear sources for new user message
+      { role: 'assistant', content: '', sources: undefined }, // Clear sources for new assistant message
     ]);
     setInput('');
     setIsLoading(true);
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
+
+    lastRetrievedDocsRef.current = []; // Clear the last retrieved documents
 
     try {
       const response = await fetch('/api/chat', {
@@ -136,23 +148,32 @@ export default function Home() {
                       newArr[newArr.length - 1].role === 'assistant'
                     ) {
                       newArr[newArr.length - 1].content = partialContent;
+                      newArr[newArr.length - 1].sources =
+                        lastRetrievedDocsRef.current;
                     }
+
                     return newArr;
                   });
                 }
               }
             }
-          } else if (event === 'values' && data) {
-            // Handle AgentState values event
-            const agentState = data as AgentState;
+          } else if (event === 'updates' && data) {
             if (
-              agentState.route === 'retrieve' &&
-              agentState.documents &&
-              agentState.documents.length > 0
+              data &&
+              typeof data === 'object' &&
+              'retrieveDocuments' in data &&
+              data.retrieveDocuments &&
+              Array.isArray(data.retrieveDocuments.documents)
             ) {
-              // Handle documents here
-              console.log('Retrieved documents:', agentState.documents);
-              // You can add additional handling for the documents here
+              const retrievedDocs = (data as RetrieveDocumentsNodeUpdates)
+                .retrieveDocuments.documents as PDFDocument[];
+
+              // // Handle documents here
+              lastRetrievedDocsRef.current = retrievedDocs;
+              console.log('Retrieved documents:', retrievedDocs);
+            } else {
+              // Clear the last retrieved documents if it's a direct answer
+              lastRetrievedDocsRef.current = [];
             }
           } else {
             console.log('Unknown SSE event:', event, data);

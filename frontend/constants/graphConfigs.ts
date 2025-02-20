@@ -1,4 +1,4 @@
-import { AgentConfiguration, IndexConfiguration } from '@/app/types/graphTypes';
+import { AgentConfiguration, IndexConfiguration } from '@/types/graphTypes';
 
 type StreamConfigurables = AgentConfiguration;
 type IndexConfigurables = IndexConfiguration;
