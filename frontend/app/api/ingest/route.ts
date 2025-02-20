@@ -1,4 +1,5 @@
 // app/api/ingest/route.ts
+import { indexConfig } from '@/constants/graphConfigs';
 import { langGraphServerClient } from '@/lib/langgraph-server';
 import { processPDF } from '@/lib/pdf';
 import { Document } from '@langchain/core/documents';
@@ -85,6 +86,11 @@ export async function POST(request: NextRequest) {
       {
         input: {
           docs: allDocs,
+        },
+        config: {
+          configurable: {
+            ...indexConfig,
+          },
         },
       },
     );

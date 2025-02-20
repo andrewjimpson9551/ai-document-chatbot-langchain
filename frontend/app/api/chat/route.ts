@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/langgraph-server';
+import { retrievalAssistantStreamConfig } from '@/constants/graphConfigs';
 
 export const runtime = 'edge';
 
@@ -39,13 +40,18 @@ export async function POST(req: Request) {
     try {
       const assistantId = process.env.LANGGRAPH_RETRIEVAL_ASSISTANT_ID;
       const serverClient = createServerClient();
-      // Try to get the stream first to catch any immediate errors
+
       const stream = await serverClient.client.runs.stream(
         threadId,
         assistantId,
         {
           input: { query: message },
-          streamMode: 'messages',
+          streamMode: ['messages', 'values'],
+          config: {
+            configurable: {
+              ...retrievalAssistantStreamConfig,
+            },
+          },
         },
       );
 
@@ -57,7 +63,6 @@ export async function POST(req: Request) {
             // Forward each chunk from the graph to the client
             for await (const chunk of stream) {
               // Only send relevant chunks
-              console.log('Chunk:', chunk);
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
               );

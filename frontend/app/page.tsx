@@ -11,6 +11,7 @@ import { ExamplePrompts } from '@/components/example-prompts';
 import { ChatMessage } from '@/components/chat-message';
 import { FilePreview } from '@/components/file-preview';
 import { client } from '@/lib/langgraph-client';
+import { AgentState } from '@/app/types/graphTypes';
 
 export default function Home() {
   const { toast } = useToast(); // Add this hook
@@ -134,7 +135,6 @@ export default function Home() {
                       newArr.length > 0 &&
                       newArr[newArr.length - 1].role === 'assistant'
                     ) {
-                      console.log('Updating message:', partialContent);
                       newArr[newArr.length - 1].content = partialContent;
                     }
                     return newArr;
@@ -142,8 +142,18 @@ export default function Home() {
                 }
               }
             }
-          } else if (event === 'messages/metadata') {
-            console.log('Metadata event:', data);
+          } else if (event === 'values' && data) {
+            // Handle AgentState values event
+            const agentState = data as AgentState;
+            if (
+              agentState.route === 'retrieve' &&
+              agentState.documents &&
+              agentState.documents.length > 0
+            ) {
+              // Handle documents here
+              console.log('Retrieved documents:', agentState.documents);
+              // You can add additional handling for the documents here
+            }
           } else {
             console.log('Unknown SSE event:', event, data);
           }

@@ -174,7 +174,6 @@ function useToast() {
 
   React.useEffect(() => {
     listeners.push(setState);
-    console.log('Listener added', setState); // Add this line
 
     return () => {
       const index = listeners.indexOf(setState);
