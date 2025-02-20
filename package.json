@@ -1,5 +1,6 @@
 {
-    "name": "ai-agent-pdf-chatbot",
+    "name": "ai-pdf-chatbot-langchain",
+    "description": "AI PDF chatbot template based on the book Learning LangChain (O'Reilly)",
     "private": true,
     "version": "0.0.1",
     "author": "Mayo Oshin",

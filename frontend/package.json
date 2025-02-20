@@ -1,6 +1,7 @@
 {
-  "name": "my-v0-project",
+  "name": "frontend",
   "version": "0.1.0",
+  "description": "Frontend for the AI chatbot based on the book Learning LangChain",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -89,5 +90,6 @@
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.2.5",
     "typescript": "^5"
-  }
+  },
+  "license": "MIT"
 }

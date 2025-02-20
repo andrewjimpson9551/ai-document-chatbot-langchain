@@ -40,7 +40,6 @@ apps/docs/public/registry/
 
 # env
 .env
-.env.example
 
 # cursor
 .cursor
