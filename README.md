@@ -1,6 +1,6 @@
 # AI PDF Chatbot & Agent Powered by LangChain and LangGraph
 
-This monorepo is a customizable template example of an AI agent chatbot that ingests PDF documents, stores embeddings in a vector database (Supabase), and then answers user queries using OpenAI (or another LLM provider) utilising LangChain and LangGraph as orchestration frameworks.
+This monorepo is a customizable template example of an AI chatbot agent that "ingests" PDF documents, stores embeddings in a vector database (Supabase), and then answers user queries using OpenAI (or another LLM provider) utilising LangChain and LangGraph as orchestration frameworks.
 
 This template is also an accompanying example to the book [Learning LangChain (O'Reilly)](https://tinyurl.com/learning-langchain): Building AI and LLM applications with LangChain and LangGraph.
 
@@ -40,6 +40,7 @@ This template is also an accompanying example to the book [Learning LangChain (O
 
 ## Architecture Overview
 
+```ascii
 ┌─────────────────────┐    1. Upload PDFs    ┌───────────────────────────┐
 │Frontend (Next.js)   │ ────────────────────> │Backend (LangGraph)       │
 │ - React UI w/ chat  │                      │ - Ingestion Graph         │
@@ -53,6 +54,7 @@ This template is also an accompanying example to the book [Learning LangChain (O
 │ - Display sources   │ <────────────────────┤   + Chat model (OpenAI)   │
 └─────────────────────┘ 4. Streamed answers  └───────────────────────────┘
 
+```
 - **Supabase** is used as the vector store to store and retrieve relevant documents at query time.  
 - **OpenAI** (or other LLM providers) is used for language modeling.  
 - **LangGraph** orchestrates the "graph" steps for ingestion, routing, and generating responses.  
@@ -87,8 +89,9 @@ The system consists of:
    ```bash
    git clone https://github.com/mayooear/ai-pdf-chatbot-langchain.git
    cd ai-pdf-chatbot-langchain
+   ```
 
-	2.	Install dependencies (from the monorepo root):
+2.	Install dependencies (from the monorepo root):
 
 yarn install
 
@@ -153,34 +156,52 @@ This monorepo uses Turborepo to manage both backend and frontend projects. You c
 
 1.	Navigate to backend:
 
-`cd backend`
+```bash
+cd backend
+```
 
-	2.	Install dependencies (already done if you ran yarn install at the root).
-	3.	Start LangGraph in dev mode:
+2.	Install dependencies (already done if you ran yarn install at the root).
 
-`yarn langgraph:dev`
+3.	Start LangGraph in dev mode:
+
+```bash
+yarn langgraph:dev
+```
 
 This will launch a local LangGraph server on port 2024 by default. It should redirect you to a UI for interacting with the LangGraph server. [Langgraph studio guide](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/)
 
 ### Running the Frontend
 
-Open a new terminal window/tab:
+1. Navigate to frontend:
 
-`cd frontend`
+```bash
+cd frontend
+```
 
-`yarn dev`
+2. Start the Next.js development server:
+
+```bash
+yarn dev
+```
 
 This will start a local Next.js development server (by default on port 3000).
+
 Access the UI in your browser at http://localhost:3000.
 
 ## Usage
 
 Once both services are running:
-	1. Use langgraph studio UI to interact with the LangGraph server and ensure the workflow is working as expected.
-    2. Navigate to http://localhost:3000 to use the chatbot UI.
-	3. Upload a small PDF document via the file upload button at the bottom of the page. This will trigger the ingestion graph to extract the text and store the embeddings in Supabase via the frontend `app/api/ingest` route.
-	4.	After the ingestion is complete, ask questions in the chat input.
-	5.	The chatbot will trigger the retrieval graph via the `app/api/chat` route to retrieve the most relevant documents from the vector database and use the relevant PDF context (if needed) to answer.
+
+1. Use langgraph studio UI to interact with the LangGraph server and ensure the workflow is working as expected.
+
+2. Navigate to http://localhost:3000 to use the chatbot UI.
+
+3. Upload a small PDF document via the file upload button at the bottom of the page. This will trigger the ingestion graph to extract the text and store the embeddings in Supabase via the frontend `app/api/ingest` route.
+	
+4. After the ingestion is complete, ask questions in the chat input.
+
+5. The chatbot will trigger the retrieval graph via the `app/api/chat` route to retrieve the most relevant documents from the vector database and use the relevant PDF context (if needed) to answer.
+
 
 ### Uploading/Ingesting PDFs
 
@@ -191,21 +212,24 @@ Select one or more PDF files to upload ensuring a total of max 5, each under 10M
 The backend processes the PDFs, extracts text, and stores embeddings in Supabase (or your chosen vector store).
 
 ### Asking Questions
-	•	Type your question in the chat input field.
-	•	Responses stream in real time. If the system retrieved documents, you’ll see a link to “View Sources” for each chunk of text used in the answer.
 
-Viewing Chat History
-	•	The system creates a unique thread per user session (frontend). All messages are kept in the state for the session.
-	•	For demonstration purposes, the current example UI does not store the entire conversation beyond the local thread state and is not persistent across sessions. You can extend it to persist threads in a database. However, the "ingested documents" are persistent across sessions as they are stored in a vector database.
+- Type your question in the chat input field.
+- Responses stream in real time. If the system retrieved documents, you’ll see a link to “View Sources” for each chunk of text used in the answer.
+
+### Viewing Chat History
+
+- The system creates a unique thread per user session (frontend). All messages are kept in the state for the session.
+- For demonstration purposes, the current example UI does not store the entire conversation beyond the local thread state and is not persistent across sessions. You can extend it to persist threads in a database. However, the "ingested documents" are persistent across sessions as they are stored in a vector database.
 
 
 ## Deploying the Backend
 
-To deploy your backend ai agent to a cloud service, you can either use LangGraph's cloud as per this [guide](https://langchain-ai.github.io/langgraph/cloud/quick_start/?h=studio#deploy-to-langgraph-cloud) or self-host it as per this [guide](https://langchain-ai.github.io/langgraph/how-tos/deploy-self-hosted/).
+To deploy your LangGraph agent to a cloud service, you can either use LangGraph's cloud as per this [guide](https://langchain-ai.github.io/langgraph/cloud/quick_start/?h=studio#deploy-to-langgraph-cloud) or self-host it as per this [guide](https://langchain-ai.github.io/langgraph/how-tos/deploy-self-hosted/).
 
 ## Deploying the Frontend
 The frontend can be deployed to any hosting that supports Next.js (Vercel, Netlify, etc.).
-Make sure NEXT_PUBLIC_LANGGRAPH_API_URL is pointing to your deployed backend URL.
+
+Make sure to set relevant environment variables in your deployment environment. In particular, ensure `NEXT_PUBLIC_LANGGRAPH_API_URL` is pointing to your deployed backend URL.
 
 ## Customizing the Agent
 
@@ -213,16 +237,15 @@ You can customize the agent on the backend and frontend.
 
 ### Backend
 
-- In the configuration file `src/shared/configuration.ts`, you can change the default configs i.e. the vector store, k-value, and filter kwargs, shared between the ingestion and retrieval graphs. Configs can be used in each node of the graph or passed into the graph as a config object via a client.
+- In the configuration file `src/shared/configuration.ts`, you can change the default configs i.e. the vector store, k-value, and filter kwargs, shared between the ingestion and retrieval graphs. On the backend, configs can be used in each node of the graph workflow or from frontend, you can pass a config object into the graph's client.
 - You can adjust the prompts in the `src/retrieval_graph/prompts.ts` file.
-- If you'd like to change the retrieval model, you can do so in the `src/shared/retrieval.ts` file by adding another makeRetriever function that encapsulates the desired client for the vector store.
-
+- If you'd like to change the retrieval model, you can do so in the `src/shared/retrieval.ts` file by adding another retriever function that encapsulates the desired client for the vector store and then updating the `makeRetriever` function to return the new retriever.
 
 
 ### Frontend
 
 - You can modify the file upload restrictions in the `app/api/ingest` route.
-- In `constants/graphConfigs.ts`, you can change the default configs for the ingestion and retrieval graphs. These include the model, k value, and retriever provider.
+- In `constants/graphConfigs.ts`, you can change the default config objects sent to the ingestion and retrieval graphs. These include the model provider, k value (no of source documents to retrieve), and retriever provider (i.e. vector store).
 
 
 ## Troubleshooting
@@ -244,7 +267,7 @@ You can customize the agent on the backend and frontend.
 
 ## Next Steps
 
-If you'd like to contribute to this project, feel free to open a pull request. Ensure it is well documented and tested.
+If you'd like to contribute to this project, feel free to open a pull request. Ensure it is well documented and includes tests in the test files.
 
-If you'd like to learn more about building AI agents with LangChain and LangGraph, check out the book [Learning LangChain (O'Reilly)](https://tinyurl.com/learning-langchain).
+If you'd like to learn more about building AI chatbots and agents with LangChain and LangGraph, check out the book [Learning LangChain (O'Reilly)](https://tinyurl.com/learning-langchain).
 
