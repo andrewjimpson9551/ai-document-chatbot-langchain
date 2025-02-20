@@ -2,8 +2,13 @@ import { Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import { PDFDocument } from '@/types/graphTypes';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 interface ChatMessageProps {
   message: {
@@ -47,25 +52,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
         ) : (
           <>
             <p className="whitespace-pre-wrap">{message.content}</p>
-            {showSources && message.sources && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {message.sources?.map((source, index) => (
-                  <Card key={index}>
-                    <CardContent className="p-2">
-                      <p className="text-sm">
-                        Source:{' '}
-                        {source.metadata?.source ||
-                          source.metadata?.filename ||
-                          'N/A'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Page: {source.metadata?.loc?.pageNumber || 'N/A'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
             {!isUser && (
               <div className="flex gap-2 mt-2">
                 <Button
@@ -80,6 +66,36 @@ export function ChatMessage({ message }: ChatMessageProps) {
                   />
                 </Button>
               </div>
+            )}
+            {showSources && message.sources && (
+              <Accordion type="single" collapsible className="w-full mt-2">
+                <AccordionItem value="sources" className="border-b-0">
+                  <AccordionTrigger className="text-sm py-2 justify-start gap-2 hover:no-underline">
+                    View Sources ({message.sources.length})
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {message.sources?.map((source, index) => (
+                        <Card
+                          key={index}
+                          className="bg-background/50 transition-all duration-200 hover:bg-background hover:shadow-md hover:scale-[1.02] cursor-pointer"
+                        >
+                          <CardContent className="p-3">
+                            <p className="text-sm font-medium truncate">
+                              {source.metadata?.source ||
+                                source.metadata?.filename ||
+                                'N/A'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Page {source.metadata?.loc?.pageNumber || 'N/A'}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
           </>
         )}
