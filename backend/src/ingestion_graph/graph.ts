@@ -25,10 +25,16 @@ async function ingestDocs(
   const configuration = ensureIndexConfiguration(config);
   let docs = state.docs;
 
-  if (!docs.length) {
-    const fileContent = await fs.readFile(configuration.docsFile, 'utf-8');
-    const serializedDocs = JSON.parse(fileContent);
-    docs = reduceDocs([], serializedDocs);
+  if (!docs || docs.length === 0) {
+    if (configuration.useSampleDocs) {
+      const fileContent = await fs.readFile(configuration.docsFile, 'utf-8');
+      const serializedDocs = JSON.parse(fileContent);
+      docs = reduceDocs([], serializedDocs);
+    } else {
+      throw new Error('No sample documents to index.');
+    }
+  } else {
+    docs = reduceDocs([], docs);
   }
 
   const retriever = await makeRetriever(config);

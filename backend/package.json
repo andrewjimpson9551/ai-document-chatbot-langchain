@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "demo": "tsx src/demo.ts",
+    "demo": "npx tsx demo.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:changed": "jest --onlyChanged --passWithNoTests",

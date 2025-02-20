@@ -45,11 +45,11 @@ async function runDemo() {
     console.log('\nWaiting for stream chunks...');
     for await (const chunk of stream) {
       console.log('\nReceived chunk:');
-      console.log('Event type:', chunk.event);
+      //   console.log('Event type:', chunk.event);
       if (chunk.event === 'values') {
-        // console.log('Values data:', JSON.stringify(chunk.data, null, 2));
+        console.log('Values data:', JSON.stringify(chunk.data, null, 2));
       } else if (chunk.event === 'messages/partial') {
-        console.log('Messages data:', JSON.stringify(chunk, null, 2));
+        // console.log('Messages data:', JSON.stringify(chunk, null, 2));
       } else if (chunk.event === 'updates') {
         // console.log('Update data:', JSON.stringify(chunk.data, null, 2));
       }

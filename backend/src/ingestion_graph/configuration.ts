@@ -18,6 +18,7 @@ export const IndexConfigurationAnnotation = Annotation.Root({
    * Path to a JSON file containing default documents to index.
    */
   docsFile: Annotation<string>,
+  useSampleDocs: Annotation<boolean>,
 });
 
 /**
@@ -38,5 +39,6 @@ export function ensureIndexConfiguration(
   return {
     ...baseConfig,
     docsFile: configurable.docsFile || DEFAULT_DOCS_FILE,
+    useSampleDocs: configurable.useSampleDocs || false,
   };
 }
