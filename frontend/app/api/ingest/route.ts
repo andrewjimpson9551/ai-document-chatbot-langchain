@@ -1,23 +1,25 @@
 // app/api/ingest/route.ts
+import { langGraphServerClient } from '@/lib/langgraph-server';
+import { processPDF } from '@/lib/pdf';
+import { Document } from '@langchain/core/documents';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Configuration constants
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_FILE_TYPES = ['application/pdf'];
 
-async function bufferFile(file: File): Promise<Buffer> {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    return buffer;
-  } catch (error) {
-    console.error('Error buffering file:', error);
-    throw new Error('Failed to read file content.');
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.LANGGRAPH_INGESTION_ASSISTANT_ID) {
+      return NextResponse.json(
+        {
+          error:
+            'LANGGRAPH_INGESTION_ASSISTANT_ID is not set in your environment variables',
+        },
+        { status: 500 },
+      );
+    }
+
     const formData = await request.formData();
     const files: File[] = [];
 
@@ -26,8 +28,6 @@ export async function POST(request: NextRequest) {
         files.push(value);
       }
     }
-
-    console.log('files', files);
 
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 });
@@ -58,50 +58,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const processedFiles = await Promise.all(
-      files.map(async (file) => {
-        try {
-          const buffer = await bufferFile(file);
+    // Process all PDFs into Documents
+    const allDocs: Document[] = [];
+    for (const file of files) {
+      try {
+        const docs = await processPDF(file);
+        allDocs.push(...docs);
+      } catch (error: any) {
+        console.error(`Error processing file ${file.name}:`, error);
+        // Continue processing other files; errors are logged
+      }
+    }
 
-          // TODO: Implement your PDF processing logic here using the buffer
-          // Example: Extract text, analyze content, etc.
-          // You can use libraries like pdf-parse (install it if you need it)
-
-          // const pdfData = await pdfParse(buffer);
-          // const textContent = pdfData.text;
-
-          return {
-            filename: file.name,
-            size: file.size,
-            // textContent: textContent, // Example: include extracted text
-          };
-        } catch (processError: any) {
-          console.error(`Error processing file ${file.name}:`, processError);
-          return {
-            filename: file.name,
-            size: file.size,
-            error: `Failed to process file: ${processError.message}`,
-          };
-        }
-      }),
-    );
-
-    const successfulFiles = processedFiles.filter((file) => !file.error);
-    const failedFiles = processedFiles.filter((file) => file.error);
-
-    if (successfulFiles.length === 0 && failedFiles.length > 0) {
+    if (!allDocs.length) {
       return NextResponse.json(
-        {
-          message: `Failed to process all files. See details for each file.`,
-          files: processedFiles,
-        },
+        { error: 'No valid documents extracted from uploaded files' },
         { status: 500 },
       );
     }
 
+    // Run the ingestion graph
+    const thread = await langGraphServerClient.createThread();
+    const ingestionRun = await langGraphServerClient.client.runs.wait(
+      thread.thread_id,
+      'ingestion_graph',
+      {
+        input: {
+          docs: allDocs,
+        },
+      },
+    );
+
     return NextResponse.json({
-      message: `Successfully processed ${successfulFiles.length} files. ${failedFiles.length} files failed.`,
-      files: processedFiles,
+      message: 'Documents ingested successfully',
+      threadId: thread.thread_id,
     });
   } catch (error: any) {
     console.error('Error processing files:', error);
