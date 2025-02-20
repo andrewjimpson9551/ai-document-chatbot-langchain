@@ -2,7 +2,7 @@
 
 This monorepo is a customizable template example of an AI chatbot agent that "ingests" PDF documents, stores embeddings in a vector database (Supabase), and then answers user queries using OpenAI (or another LLM provider) utilising LangChain and LangGraph as orchestration frameworks.
 
-This template is also an accompanying example to the book [Learning LangChain (O'Reilly)](https://tinyurl.com/learning-langchain): Building AI and LLM applications with LangChain and LangGraph.
+This template is also an accompanying example to the book [Learning LangChain (O'Reilly)](https://www.oreilly.com/library/view/learning-langchain/9781098167271): Building AI and LLM applications with LangChain and LangGraph.
 
 **Here's what the Chatbot UI looks like:**
 
@@ -272,5 +272,5 @@ You can customize the agent on the backend and frontend.
 
 If you'd like to contribute to this project, feel free to open a pull request. Ensure it is well documented and includes tests in the test files.
 
-If you'd like to learn more about building AI chatbots and agents with LangChain and LangGraph, check out the book [Learning LangChain (O'Reilly)](https://tinyurl.com/learning-langchain).
+If you'd like to learn more about building AI chatbots and agents with LangChain and LangGraph, check out the book [Learning LangChain (O'Reilly)](https://www.oreilly.com/library/view/learning-langchain/9781098167271/).
 
