@@ -20,7 +20,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={GeistSans.className}>
+        
         {children}
+        
         <Toaster />
       </body>
     </html>
