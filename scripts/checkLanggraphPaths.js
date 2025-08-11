@@ -46,6 +46,10 @@ function checkLanggraphPaths() {
 
     let hasError = false;
 
+
+
+    
+
     for (const [key, value] of Object.entries(graphs)) {
       const [filePath, objectName] = value.split(":");
       const fullPath = path.join(__dirname, "..", filePath);
