@@ -11,23 +11,24 @@ This template is also an accompanying example to the book [Learning LangChain (O
 ## Table of Contents
 
 1. [Features](#features)
-2. [Architecture Overview](#architecture-overview)
-3. [Prerequisites](#prerequisites)
-4. [Installation](#installation)
-5. [Environment Variables](#environment-variables)
+   
+3. [Architecture Overview](#architecture-overview)
+4. [Prerequisites](#prerequisites)
+5. [Installation](#installation)
+6. [Environment Variables](#environment-variables)
    - [Frontend Variables](#frontend-variables)
    - [Backend Variables](#backend-variables)
-6. [Local Development](#local-development)
+7. [Local Development](#local-development)
    - [Running the Backend](#running-the-backend)
    - [Running the Frontend](#running-the-frontend)
-7. [Usage](#usage)
+8. [Usage](#usage)
    - [Uploading/Ingesting PDFs](#uploadingingesting-pdfs)
    - [Asking Questions](#asking-questions)
    - [Viewing Chat History](#viewing-chat-history)
-8. [Production Build & Deployment](#production-build--deployment)
-9. [Customizing the Agent](#customizing-the-agent)
-10. [Troubleshooting](#troubleshooting)
-11. [Next Steps](#next-steps)
+9. [Production Build & Deployment](#production-build--deployment)
+10. [Customizing the Agent](#customizing-the-agent)
+11. [Troubleshooting](#troubleshooting)
+12. [Next Steps](#next-steps)
 
 ---
 
