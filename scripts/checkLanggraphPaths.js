@@ -4,9 +4,7 @@ import { fileURLToPath } from "url";
 
 // Function to check if a file exists
 function fileExists(filePath) {
-  return fs.existsSync(filePath);
-
-  
+  return fs.existsSync(filePath);  
   
 }
 
@@ -21,6 +19,7 @@ function isObjectExported(filePath, objectName) {
     
   } catch (error) {
     console.error(`Error reading file ${filePath}: ${error.message}`);
+    
     return false;
   }
 }
