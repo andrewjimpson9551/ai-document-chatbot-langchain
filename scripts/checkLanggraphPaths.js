@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 // Function to check if a file exists
 function fileExists(filePath) {
   return fs.existsSync(filePath);
+  
 }
 
 // Function to check if an object is exported from a file
