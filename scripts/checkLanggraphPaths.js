@@ -26,6 +26,7 @@ function isObjectExported(filePath, objectName) {
 
 // Main function to check langgraph.json
 function checkLanggraphPaths() {
+  
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const langgraphPath = path.join(__dirname, "..", "langgraph.json");
