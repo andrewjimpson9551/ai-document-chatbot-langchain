@@ -4,6 +4,7 @@
     "private": true,
     "version": "0.0.1",
     "author": "Mayo Oshin",
+    
     "license": "MIT",
     "workspaces": [
       "backend",
