@@ -7,6 +7,7 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Learning LangChain Book Chatbot Demo",
+  
   description: "A chatbot demo based on Learning LangChain (O'Reilly)",
 }
 
