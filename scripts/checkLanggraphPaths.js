@@ -16,6 +16,7 @@ function isObjectExported(filePath, objectName) {
       `export\\s+(?:const|let|var)\\s+${objectName}\\s*=|export\\s+\\{[^}]*\\b${objectName}\\b[^}]*\\}`,
     );
     return exportRegex.test(fileContent);
+    
   } catch (error) {
     console.error(`Error reading file ${filePath}: ${error.message}`);
     return false;
