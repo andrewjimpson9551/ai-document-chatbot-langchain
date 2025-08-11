@@ -5,6 +5,8 @@ import { fileURLToPath } from "url";
 // Function to check if a file exists
 function fileExists(filePath) {
   return fs.existsSync(filePath);
+
+  
   
 }
 
