@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
+
 interface ChatMessageProps {
   message: {
     role: 'user' | 'assistant';
